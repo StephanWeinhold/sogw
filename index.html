@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>SOGW</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/tachyons/css/tachyons.min.css">
+<style>
+table,
+thead,
+tbody,
+tfoot,
+tr,
+th,
+td {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-collapse: inherit;
+    border-spacing: 0;
+    border-color: inherit;
+    vertical-align: inherit;
+    text-align: left;
+    font-weight: inherit;
+    -webkit-border-horizontal-spacing: 0;
+    -webkit-border-vertical-spacing: 0;
+}
+
+#fretboard table {
+  background-color: rgb(186, 147, 114);
+  border-left: 3px solid rgb(180, 180, 180);
+}
+
+#fretboard tr {
+  border-right: 2px solid rgb(180, 180, 180);
+}
+
+#fretboard td {
+  border: 1px solid rgb(180, 180, 180);
+  height: 20px;
+  text-align: center;
+  width: 40px;
+}
+
+#fretboard td.correct {
+  background-color: rgb(10, 100, 20);
+}
+
+#fretboard td.wrong {
+  background-color: rgb(200, 50, 20);
+}
+</style>
+</head>
+<body>
+  <section>
+    <main>
+      <div id="sogw">
+        <div>
+          <div id=""></div>
+          <div id="noteToFind"></div>
+          <div id=""></div>
+        </div>
+        <div>
+          <div class="container">
+            <div id="fretboard"></div>
+          </div>
+          <div id=""></div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <script>
+let app = {};
+app.functions = {};
+app.functions.checks = {};
+
+let $ = function(e) { return document.getElementById(e); };
+
+app.config = {
+  stringsToGuess: { 0:'e2', 1:'B', 2:'G', 3:'D', 4:'A', 5:'E' },
+  mode: 'findAllOccurences',
+  numberOfNotesToFind: 3,
+};
+
+app.strings = { 0:'E', 1:'A', 2:'D', 3:'G', 4:'B', 5:'e2' };
+
+app.strings.E  = { notes: { 0:'E1', 1:'F1', 2:'F#1', 3:'G1', 4:'G#1', 5:'A1', 6:'A#1', 7:'B1', 8:'C1', 9:'C#1', 10:'D1', 11:'D#1', 12:'E2', 13:'F2', 14:'F#2', 15:'G2', 16:'G#2', 17:'A2', 18:'A#2', 19:'B2', 20:'C2', 21:'C#2', 22:'D2', 23:'D#2', 24:'E3' } };
+app.strings.A  = { notes: { 0:'A1', 1:'A#1', 2:'B1', 3:'C1', 4:'C#1', 5:'D1', 6:'D#1', 7:'E2', 8:'F2', 9:'F#2', 10:'G2', 11:'G#2', 12:'A2', 13:'A#2', 14:'B2', 15:'C2', 16:'C#2', 17:'D2', 18:'D#2', 19:'E3', 20:'F3', 21:'F#3', 22:'G3', 23:'G#3', 24:'A3' } };
+app.strings.D  = { notes: { 0:'D1', 1:'D#1', 2:'E2', 3:'F2', 4:'F#2', 5:'G2', 6:'G#2', 7:'A2', 8:'A#2', 9:'B2', 10:'C2', 11:'C#2', 12:'D2', 13:'D#2', 14:'E3', 15:'F3', 16:'F#3', 17:'G3', 18:'G#3', 19:'A3', 20:'A#3', 21:'B3', 22:'C3', 23:'C#3', 24:'D3' } };
+app.strings.G  = { notes: { 0:'G2', 1:'G#2', 2:'A2', 3:'A#2', 4:'B2', 5:'C2', 6:'C#2', 7:'D2', 8:'D#2', 9:'E3', 10:'F3', 11:'F#3', 12:'G3', 13:'G#3', 14:'A3', 15:'A#3', 16:'B3', 17:'C3', 18:'C#3', 19:'D3', 20:'D#3', 21:'E4', 22:'F4', 23:'F#4', 24:'G4' } };
+app.strings.B  = { notes: { 0:'B2', 1:'C2', 2:'C#2', 3:'D2', 4:'D#2', 5:'E3', 6:'F3', 7:'F#3', 8:'G3', 9:'G#3', 10:'A3', 11:'A#3', 12:'B3', 13:'C3', 14:'C#3', 15:'D3', 16:'D#3', 17:'E4', 18:'F4', 19:'F#4', 20:'G4', 21:'G#4', 22:'A4', 23:'A#4', 24:'B4' } };
+app.strings.e2 = { notes: { 0:'E3', 1:'F3', 2:'F#3', 3:'G3', 4:'G#3', 5:'A3', 6:'A#3', 7:'B3', 8:'C3', 9:'C#3', 10:'D3', 11:'D#3', 12:'E4', 13:'F4', 14:'F#4', 15:'G4', 16:'G#4', 17:'A4', 18:'A#4', 19:'B4', 20:'C4', 21:'C#4', 22:'D4', 23:'D#4', 24:'E5' } };
+
+/* ############################################################################# FUNCTIONS */
+
+app.functions.fillFretboard = function() {
+  let output = '<table>';
+
+  for (let i = 0, lenI = Object.keys(app.config.stringsToGuess).length; i < lenI; ++i) {
+    output += '<tr id="s_' + app.config.stringsToGuess[i] + '" class="string">';
+
+    for (let j = 0, lenJ = Object.keys(app.strings[app.config.stringsToGuess[i]].notes).length; j < lenJ; ++j) {
+      output += '<td id="s_' + app.config.stringsToGuess[i] + '_n_' + app.strings[app.config.stringsToGuess[i]].notes[j] + '" class="note"></td>';
+    };
+
+    output += '</tr>';
+  };
+
+  output += '</table>';
+
+  return output;
+}
+
+app.functions.getNotesToFind = function() {
+  //return ['C2'];
+  return ['C'];
+};
+
+/* ############################################################################# CHECKS */
+
+app.functions.checks.findAnyOccurence = function() {
+  let notesToFind = app.functions.getNotesToFind(),
+      points = 0;
+
+  //for (let i = 0, len = notesToFind.length; i < len; ++i) {
+let i = 0;
+    $('noteToFind').innerHTML = notesToFind[i];
+
+    $('fretboard').addEventListener('click', function(e) {
+      // See if clicked fret is a #-note or not.
+      let clickedNote = (e.target.id.substring(7, 8) != '#') ? e.target.id.substring(6, 7) : e.target.id.substring(6, 8);
+      $(e.target.id).innerHTML = clickedNote;
+
+      if (clickedNote == notesToFind[i]) {
+        $(e.target.id).classList.add('correct');
+      }
+      else {
+        $(e.target.id).classList.add('wrong');
+      }
+    }, false);
+  //};
+
+  $('fretboard').removeEventListener("click", app.functions.getClickedId, false);
+};
+
+app.functions.checks.findAllOccurences = function() {
+  let notesToFind = app.functions.getNotesToFind();
+
+  for (let i = 0, len = notesToFind.length; i < len; ++i) {
+    $('noteToFind').innerHTML = notesToFind[i];
+  };
+};
+
+/* ############################################################################# RUN */
+
+$('fretboard').innerHTML = app.functions.fillFretboard();
+
+app.functions.checks.findAnyOccurence();
+  </script>
+</body>
+</html>
